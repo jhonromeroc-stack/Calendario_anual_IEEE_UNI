@@ -548,7 +548,8 @@
         const SHEET_RANGE = 'Calendario Anual!A:E';
         const ALLOWED_DOMAINS = ['uni.pe', 'gmail.com'];
         const ALLOWED_EMAILS = [
-            'jhon.romero.c@uni.pe', 'marcos.romero.c@uni.pe', 'alejandro.zavaleta.c@uni.pe',
+            'jhon.romero.c@uni.pe', 'jhonoficial2003@gmail.com',
+            'marcos.romero.c@uni.pe', 'alejandro.zavaleta.c@uni.pe',
             'domenick.varillas.p@uni.pe', 'eliane.antara.g@uni.pe', 'frank.gonzales.u@uni.pe',
             'david.quispe.q@uni.pe', 'jose.allccahuaman.g@uni.pe', 'alejandro.gomez.s@uni.pe',
             'victorquispe2606@gmail.com', 'angel.escudero.l@uni.pe', 'luis.sanchez.d@uni.pe',
@@ -651,18 +652,20 @@
 
         async function loadEventsFromSheet() {
             try {
+                events = [];
+                
+                // Cargar desde Google Sheets
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: SHEET_RANGE,
                 });
 
-                events = [];
                 const rows = response.result.values;
                 
                 if (rows && rows.length > 1) {
                     for (let i = 1; i < rows.length; i++) {
                         const row = rows[i];
-                        if (row.length >= 5 && row[0]) { // fecha existe
+                        if (row.length >= 5 && row[0]) {
                             events.push({
                                 date: row[0],
                                 chapter: row[1] || '',
@@ -674,34 +677,59 @@
                     }
                 }
 
+                // Cargar también desde localStorage (eventos locales no subidos)
+                const localEvents = localStorage.getItem('ieeeEvents');
+                if (localEvents) {
+                    const parsed = JSON.parse(localEvents);
+                    parsed.forEach(localEvent => {
+                        // Evitar duplicados
+                        const exists = events.find(e => 
+                            e.date === localEvent.date && 
+                            e.name === localEvent.name && 
+                            e.chapter === localEvent.chapter
+                        );
+                        if (!exists) {
+                            events.push(localEvent);
+                        }
+                    });
+                }
+
                 // Renderizar después de cargar eventos
                 setTimeout(() => {
                     renderCalendar();
                 }, 100);
             } catch (error) {
                 console.error('Error cargando eventos:', error);
-                showError('Error al cargar eventos desde Google Sheets');
-                renderCalendar(); // Renderizar aunque haya error
+                
+                // Si falla Google Sheets, usar solo localStorage
+                const localEvents = localStorage.getItem('ieeeEvents');
+                if (localEvents) {
+                    events = JSON.parse(localEvents);
+                }
+                
+                renderCalendar();
             }
         }
 
         async function saveEventToSheet(event) {
             try {
-                const values = [
-                    [event.date, event.chapter, event.name, event.description, event.responsible]
-                ];
+                // Guardar en localStorage primero (rápido y local)
+                events.push(event);
+                localStorage.setItem('ieeeEvents', JSON.stringify(events));
 
-                await gapi.client.sheets.spreadsheets.values.append({
+                // Intentar guardar en Google Sheets (asincrónico, sin bloquear)
+                gapi.client.sheets.spreadsheets.values.append({
                     spreadsheetId: SHEET_ID,
                     range: SHEET_RANGE,
                     valueInputOption: 'USER_ENTERED',
-                    values: values,
+                    values: [[event.date, event.chapter, event.name, event.description, event.responsible]],
+                }).catch(error => {
+                    console.error('Error guardando en Google Sheets:', error);
+                    // No mostramos error, ya está guardado en localStorage
                 });
-
-                loadEventsFromSheet();
             } catch (error) {
                 console.error('Error guardando evento:', error);
-                showError('Error al guardar evento en Google Sheets');
+                showError('Error al guardar evento');
             }
         }
 
