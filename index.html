@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario IEEE UNI - Sincronizado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        .status-dot.disconnected {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .form-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-grid.full {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .calendar-section {
+            margin-top: 30px;
+        }
+
+        .calendar-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar-nav button {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .calendar-nav button:hover {
+            background: #764ba2;
+        }
+
+        .month-year {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .calendar {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #f0f0f0;
+            font-weight: 600;
+            text-align: center;
+            gap: 1px;
+            background-color: #ddd;
+        }
+
+        .weekday {
+            padding: 12px;
+            background: #f0f0f0;
+            text-align: center;
+            color: #666;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #ddd;
+            padding: 1px;
+        }
+
+        .day {
+            background: white;
+            padding: 12px;
+            min-height: 100px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day:hover {
+            background: #f0f0f0;
+        }
+
+        .day.other-month {
+            background: #fafafa;
+            color: #999;
+        }
+
+        .day.today {
+            background: #e3f2fd;
+            font-weight: 600;
+        }
+
+        .day.today::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 20px 20px 0;
+            border-color: transparent #667eea transparent transparent;
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .day-events {
+            font-size: 0.75em;
+            color: #666;
+            max-height: 60px;
+            overflow: hidden;
+        }
+
+        .event-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+            margin-right: 3px;
+        }
+
+        .event-item {
+            background: #e3f2fd;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .event-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .event-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .event-meta {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .events-list {
+            margin-top: 20px;
+        }
+
+        .events-list h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .evento-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .evento-info {
+            flex: 1;
+        }
+
+        .evento-titulo {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .evento-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .evento-capitulo {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .calendar-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Calendario IEEE UNI</h1>
+            <p>Sincronización en tiempo real de eventos</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot disconnected" id="statusDot"></div>
+                <span id="statusText">Conectando...</span>
+            </div>
+            <div id="syncInfo" style="font-size: 0.9em; color: #666;"></div>
+        </div>
+
+        <div class="content">
+            <!-- ALERTAS -->
+            <div id="alertContainer"></div>
+
+            <!-- FORMULARIO AGREGAR EVENTO -->
+            <div class="form-section">
+                <h2>➕ Nuevo Evento</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="titulo">Título del evento *</label>
+                        <input type="text" id="titulo" placeholder="Ej: Charla de Energías Renovables" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha *</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="hora">Hora</label>
+                        <input type="time" id="hora">
+                    </div>
+                    <div class="form-group">
+                        <label for="capitulo">Capítulo IEEE</label>
+                        <select id="capitulo">
+                            <option>IEEE UNI</option>
+                            <option>IEEE PUC</option>
+                            <option>IEEE UNMSM</option>
+                            <option>IEEE UTEC</option>
+                            <option>IEEE SAN MARTIN</option>
+                            <option>IEEE TECSUP</option>
+                            <option>Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid full">
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" placeholder="Detalles adicionales del evento..."></textarea>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="agregarEvento()">Agregar Evento</button>
+                    <button class="btn btn-secondary" onclick="limpiarFormulario()">Limpiar</button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN CALENDARIO -->
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <div class="calendar-nav">
+                        <button onclick="mesAnterior()">← Anterior</button>
+                        <button onclick="hoy()">Hoy</button>
+                        <button onclick="mesSiguiente()">Siguiente →</button>
+                    </div>
+                    <div class="month-year" id="monthYear"></div>
+                    <div class="filters">
+                        <button class="filter-btn active" onclick="filtrarCapitulo('Todos')">Todos</button>
+                        <button class="filter-btn" onclick="filtrarCapitulo('IEEE UNI')">IEEE UNI</button>
+                        <button class="filter-btn" onclick="filtrarCapitulo('Otros')">Otros Capítulos</button>
+                    </div>
+                </div>
+
+                <div class="calendar" id="calendar"></div>
+            </div>
+
+            <!-- LISTA DE EVENTOS -->
+            <div class="events-list">
+                <h3>📋 Eventos Próximos</h3>
+                <div id="eventosList" class="loading">Cargando eventos...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN
+        // ============================================
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwb4LwQUJBoYfSyeZyQLP0BPNm9cXEePrQxojqjlu5CMWUHby9HNDQT7-Um4ONzLw__Gw/exec";
+        const SYNC_INTERVAL = 30000; // Sincronizar cada 30 segundos
+
+        let eventos = [];
+        let filtroCapituloActual = "Todos";
+        let syncTimer = null;
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            setFechaHoy();
+            cargarEventos();
+            renderizar();
+            iniciarSincronizacion();
+        });
+
+        // ============================================
+        // SINCRONIZACIÓN CON GOOGLE SHEETS
+        // ============================================
+        function cargarEventos() {
+            setStatus(false, "Sincronizando...");
+            
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getAll' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    eventos = data.data || [];
+                    setStatus(true, "Sincronizado");
+                    mostrarAlerta('Eventos actualizados desde el servidor', 'success');
+                    renderizar();
+                } else {
+                    setStatus(false, "Error al sincronizar");
+                    mostrarAlerta('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar:', error);
+                setStatus(false, "Desconectado");
+                mostrarAlerta('Error de conexión. Usando caché local.', 'error');
+                cargarDelCache();
+            });
+        }
+
+        function agregarEvento() {
+            const titulo = document.getElementById('titulo').value.trim();
+            const fecha = document.getElementById('fecha').value;
+            const hora = document.getElementById('hora').value;
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const capitulo = document.getElementById('capitulo').value;
+
+            if (!titulo || !fecha) {
+                mostrarAlerta('Por favor completa los campos requeridos', 'error');
+                return;
+            }
+
+            const evento = {
+                action: 'add',
+                id: 'evt_' + Date.now(),
+                titulo,
+                fecha,
+                hora,
+                descripcion,
+                capitulo
+            };
+
+            setStatus(false, "Guardando...");
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(evento)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarAlerta('✅ Evento agregado y sincronizado', 'success');
+                    limpiarFormulario();
+                    cargarEventos();
+                    setStatus(true, "Sincronizado");
+                } else {
+                    mostrarAlerta('Error: ' + data.message, 'error');
+                    setStatus(false, "Error");
+                }
+            })
+            .catch(error => {
+                console.error('Error al agregar:', error);
+                mostrarAlerta('Error de conexión', 'error');
+                setStatus(false, "Error");
+            });
+        }
+
+        function eliminarEvento(eventoId) {
+            if (!confirm('¿Eliminar este evento?')) return;
+
+            setStatus(false, "Eliminando...");
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'delete', id: eventoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarAlerta('✅ Evento eliminado', 'success');
+                    cargarEventos();
+                    setStatus(true, "Sincronizado");
+                } else {
+                    mostrarAlerta('Error: ' + data.message, 'error');
+                    setStatus(false, "Error");
+                }
+            })
+            .catch(error => {
+                console.error('Error al eliminar:', error);
+                mostrarAlerta('Error de conexión', 'error');
+                setStatus(false, "Error");
+            });
+        }
+
+        function iniciarSincronizacion() {
+            syncTimer = setInterval(() => {
+                cargarEventos();
+            }, SYNC_INTERVAL);
+        }
+
+        // ============================================
+        // UTILIDADES
+        // ============================================
+        function setStatus(connected, text) {
+            const dot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                dot.className = 'status-dot connected';
+                statusText.textContent = '✅ ' + text;
+            } else {
+                dot.className = 'status-dot disconnected';
+                statusText.textContent = '⚠️ ' + text;
+            }
+            
+            const syncInfo = document.getElementById('syncInfo');
+            syncInfo.textContent = 'Última sincronización: ' + new Date().toLocaleTimeString();
+        }
+
+        function mostrarAlerta(mensaje, tipo = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${tipo}`;
+            alert.textContent = mensaje;
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 4000);
+        }
+
+        function setFechaHoy() {
+            const hoy = new Date();
+            const formattedDate = hoy.toISOString().split('T')[0];
+            document.getElementById('fecha').value = formattedDate;
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('titulo').value = '';
+            document.getElementById('descripcion').value = '';
+            document.getElementById('hora').value = '';
+            setFechaHoy();
+            document.getElementById('capitulo').value = 'IEEE UNI';
+        }
+
+        function cargarDelCache() {
+            const cache = localStorage.getItem('eventosCache');
+            if (cache) {
+                eventos = JSON.parse(cache);
+                mostrarAlerta('Usando eventos del navegador (sin sincronización)', 'info');
+            }
+        }
+
+        function guardarEnCache() {
+            localStorage.setItem('eventosCache', JSON.stringify(eventos));
+        }
+
+        function filtrarCapitulo(capitulo) {
+            filtroCapituloActual = capitulo;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderizar();
+        }
+
+        // ============================================
+        // RENDERIZAR CALENDARIO
+        // ============================================
+        let fechaActual = new Date();
+
+        function renderizar() {
+            dibujarCalendario();
+            dibujarEventos();
+            guardarEnCache();
+        }
+
+        function dibujarCalendario() {
+            const year = fechaActual.getFullYear();
+            const month = fechaActual.getMonth();
+            const hoy = new Date();
+
+            document.getElementById('monthYear').textContent = 
+                new Date(year, month).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+            const primerDia = new Date(year, month, 1);
+            const ultimoDia = new Date(year, month + 1, 0);
+            const diasMes = ultimoDia.getDate();
+            const diaInicio = primerDia.getDay();
+
+            let html = '<div class="weekdays">';
+            ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(dia => {
+                html += `<div class="weekday">${dia}</div>`;
+            });
+            html += '</div><div class="days">';
+
+            // Días del mes anterior
+            const diasAnterior = new Date(year, month, 0).getDate();
+            for (let i = diaInicio - 1; i >= 0; i--) {
+                html += `<div class="day other-month">${diasAnterior - i}</div>`;
+            }
+
+            // Días del mes actual
+            for (let dia = 1; dia <= diasMes; dia++) {
+                const fecha = new Date(year, month, dia);
+                const esHoy = fecha.toDateString() === hoy.toDateString();
+                const fechaStr = fecha.toISOString().split('T')[0];
+                const eventosDelDia = eventos.filter(e => e.fecha === fechaStr);
+
+                html += `<div class="day ${esHoy ? 'today' : ''}">
+                    <div class="day-number">${dia}</div>
+                    <div class="day-events">
+                        ${eventosDelDia.slice(0, 2).map(e => `<span class="event-dot" title="${e.titulo}"></span>`).join('')}
+                        ${eventosDelDia.length > 2 ? `<span style="font-size: 0.8em;">+${eventosDelDia.length - 2}</span>` : ''}
+                    </div>
+                </div>`;
+            }
+
+            // Días del mes siguiente
+            const diasRestantes = 42 - (diaInicio + diasMes);
+            for (let i = 1; i <= diasRestantes; i++) {
+                html += `<div class="day other-month">${i}</div>`;
+            }
+
+            html += '</div>';
+            document.getElementById('calendar').innerHTML = html;
+        }
+
+        function dibujarEventos() {
+            let eventosMostrados = eventos
+                .filter(e => {
+                    if (filtroCapituloActual === 'Todos') return true;
+                    if (filtroCapituloActual === 'IEEE UNI') return e.capitulo === 'IEEE UNI';
+                    if (filtroCapituloActual === 'Otros') return e.capitulo !== 'IEEE UNI';
+                    return true;
+                })
+                .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+            if (eventosMostrados.length === 0) {
+                document.getElementById('eventosList').innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay eventos próximos</p>';
+                return;
+            }
+
+            let html = '';
+            eventosMostrados.forEach(evento => {
+                const fecha = new Date(evento.fecha);
+                html += `
+                    <div class="evento-card">
+                        <div class="evento-info">
+                            <div class="evento-titulo">${evento.titulo}</div>
+                            <div class="evento-details">
+                                📅 ${fecha.toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                                ${evento.hora ? ' ⏰ ' + evento.hora : ''}
+                            </div>
+                            ${evento.descripcion ? `<div class="evento-details" style="margin-top: 5px;">${evento.descripcion}</div>` : ''}
+                            <span class="evento-capitulo">${evento.capitulo}</span>
+                        </div>
+                        <button class="btn btn-danger" onclick="eliminarEvento('${evento.id}')">Eliminar</button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('eventosList').innerHTML = html;
+        }
+
+        function mesAnterior() {
+            fechaActual.setMonth(fechaActual.getMonth() - 1);
+            dibujarCalendario();
+        }
+
+        function mesSiguiente() {
+            fechaActual.setMonth(fechaActual.getMonth() + 1);
+            dibujarCalendario();
+        }
+
+        function hoy() {
+            fechaActual = new Date();
+            dibujarCalendario();
+        }
+    </script>
+</body>
+</html>
